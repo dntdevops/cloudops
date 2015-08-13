@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+<meta charset="utf-8">
+
+{% load staticfiles %} 
+
+<title> {% block title%}{% endblock %} </title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="google" value="notranslate">
+
+<!--[if lt IE 9]>
+<script>location.href="/modern-browser-required";</script>
+<![endif]-->
+
+<link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+<link href="{% static 'css/app.css' %}" rel="stylesheet" />
+<script src="{% static 'js/jquery.min.js' %} "></script>
+<script src="{% static 'bootstrap/js/bootstrap.min.js' %} "></script>
+
+{% block linkscript %} {% endblock %}
+
+</head>
+
+<body class="{{ index}}">
+
+<!-- Fixed navbar -->
+<nav class="navbar navbar-default navbar-fixed-top">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand">DevOps</a>
+    </div>
+    <div class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+		<li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">部署发布</a>
+          <ul class="dropdown-menu">
+           {% if request.user.is_superuser %}
+            <li><a href="{% url 'deploy_index' %}">获取设备信息</a></li>
+            <li role="separator" class="divider"></li>
+            <li><a href="{% url 'deploy_middleware' %}">中间件部署</a></li>
+            <li role="separator" class="divider"></li>
+            <li><a href="#">应用包关联</a></li>
+           {% endif %}
+            <li><a href="{% url 'upload_package' %}">应用包更新</a></li>
+          </ul>
+        </li>
+        <li ><a>设备管理</a></li>
+      </ul>
+
+     
+      <ul class="nav navbar-nav navbar-right">
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+            欢迎您，<span ng-bind="username"></span>
+            <span class="caret"></span>
+          </a>
+          <ul class="dropdown-menu fixwidth">
+            <li><a href="{% url 'mycount' %}">我的账户</a></li>
+            {% if request.user.is_superuser %}
+            <li><a href="{% url 'managecount' %}">用户管理</a></li>
+            {% endif %}             
+            <li><a href="{% url 'logout' %}" target="_self">退出</a></li>
+          </ul>
+        </li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div>
+</nav>
+
+<!-- 主视图 -->
+<div class="container">
+{% block content %} 
+
+
+{% endblock %}
+</div>
+
+<div class="footer">
+  Powered by <a href="www.dnt.com.cn" target="_blank">DNT</a> under <a href="/LICENSE" target="_blank">BSD</a>.
+</div>
+
+
+</body>
+</html>

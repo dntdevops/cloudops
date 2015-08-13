@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block linkscript %}
+{% load staticfiles %}
+<script src="{% static 'bootstrap/js/mindmup-editabletable.js' %} "></script>
+{% endblock %}
+
+{% block title %} 中间件部署 {% endblock %}
+
+{% block content %}
+
+    <div class="container" style="background-color:#fff">
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">中间件部署</h1>
+            </div>
+        </div>
+        <div class="row">
+	    </div>
+        <div class="row col-lg-12">
+            <form class="form-inline" role="form">
+                <div class="form-group">
+                    <label for="order_no"  class="label-control">申请单：</label>
+				    <select id='order_no' class="form-control">
+				    <option value =""></option>
+				      {% for item in order_no %}
+					      <option value ="{{item.order_no}}">{{item.order_name}}</option>
+					  {% endfor %}
+				  </select> 
+				</div>
+                <div class="form-group">
+                    <label for="middleware">中间件名称：</label>
+				    <select id='middleware' class="form-control">
+				    <option value =""></option>
+				      {% for item in middleware %}
+				          <option value ="{{item.name}}">{{item.name}}</option>
+					  {% endfor %}
+				  </select>                    
+                </div>
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#myModal">查看部署日志</button>
+            </form>
+            
+	      <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+		  <div class="modal-dialog">
+		    <div class="modal-content">
+		      <div class="modal-header">
+		        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+		           <label for="host_user">日志主机信息：</label>
+		           <select id='host_user' class="modal-title">
+		           <option value=""></option>
+		           </select>		          
+		      </div>
+		      <div class="modal-body" style="word-wrap:break-word;">
+		      
+		      </div>
+		      <div class="modal-footer">
+		        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+		      </div>
+		    </div>
+		  </div>
+		</div>
+		  
+		<script> 
+		var interval_var = '' 
+		var line = 1;
+		$('#myModal').on('show.bs.modal', function (event) {
+		  $(this).removeData('bs.modal');
+		  var button = $(event.relatedTarget)
+		  var order_no_v = $("select#order_no").val(); 
+		  var host_user = $("select#host_user");
+
+		  var modal = $(this);
+		  host_user.empty();
+		  modal.find('.modal-title').load("/application/getlog_deploy_user/",{'order_no': order_no_v },function(data) {
+		    var data = $.parseJSON(data);
+		  	host_user_data = data.deploy_host;
+		  	line = data.linenumber;		  	
+		  	if(data != ""){		  	  
+		  	  option = '<option value="" selected></option>'; 
+		  	  for(i=0; i<host_user_data.length; i++){
+				option = option + '<option value="' + host_user_data[i] + '">' + host_user_data[i] + '</option>'; 
+			}
+			host_user.append(option); 
+			
+			 //end data 
+		  	}
+		   // end modal.find
+		  })
+		  // end myModal
+		});
+		
+		$("#myModal").on("hidden.bs.modal", function() { $(this).removeData("bs.modal"); clearInterval(interval_var);});
+		
+          
+        $("body").on("change","select#host_user",function(){
+          var host_user_v = $("select#host_user").val();  
+		  line = 1;		  
+		  if(typeof interval_var != 'undefined'){
+			 clearInterval(interval_var);
+			 interval_var = '';
+		  }
+		  if(host_user_v != ""){
+		  var interval_count = 0;
+		  interval_var = setInterval(function(){
+				$.ajax({
+				  url: "/application/getlog_deploy_log/",
+				  data: {
+								host_user : host_user_v,
+								linenumber : line
+				  }, 
+				  type: 'POST',
+				  success: function(data){ 
+						var data = $.parseJSON(data);
+						var log = data.log;
+						if(log.length>2){
+						  interval_count = 0;
+						  $('.modal-body').append(log);
+						  line = data.linenumber;
+						}else{
+						  interval_count ++;
+						  if(interval_count==90){
+							clearInterval(interval_var);
+						  }
+						}
+				  },error: function(data) {
+						 console.log(data);
+				  }
+				  //end the interval ajax
+				  });
+		  //end the var t
+		  },2000);
+          //end if host_user_v            
+		  } else{
+				$(".modal-body").html("");
+				clearInterval(interval_var);
+		  }  
+        }); 
+        </script>
+                
+       </div>
+	
+	  <div id="table_data">
+	      <table id="hostinfo" class="table table-striped table-hover" data-pagination="true" data-search="true">
+	      </table>   
+	  </div> 
+<script> 
+		
+	$("select#order_no").on("change",function(){
+    var order_no_v = $('select#order_no').val();
+    var middleware_v = $('select#middleware').val();
+    var hostinfo = $('table#hostinfo');
+    $.ajax({
+    url: "/application/deploy_middleware_select/", 
+    data: {
+        order_no : order_no_v,
+        middleware : middleware_v
+    }, 
+    type: "GET",
+    dataType : "json", 
+    
+    success: function(data) {
+	if(data != ""){
+	hostinfo.empty(); 
+	hostinfo.append('<tr><th>hostid</th> <th>主机名</th> <th>域名</th><th>ip</th> <th>实例数</th><th>用户</th><th>控制端口</th><th><input type="checkbox" id="check_all">全选</input><button type="button" id="deploybutton" data-loading-text="正在部署中..." class="btn btn-default">部署</button><button type="button" id="deployreset" class="btn btn-default">撤销</button></th></tr>'); 
+	hostinfo.append('<tbody>')
+	for(i=0;i<data.length; i++){
+		option = '<tr>'  +
+              '<td >'+ data[i]['host_id'] + '</td>' +
+              '<td >'+ data[i]['host_name'] + '</td>' +
+              '<td >'+ data[i]['area'] + '</td>' +
+              '<td >'+ data[i]['ip'] + '</td>' +
+              '<td >'+ data[i]['instance'] + '</td>' +
+              '<td >'+ data[i]['username'] + '</td>' +
+              '<td >'+ data[i]['console_port'] + '</td>' +
+              '<td><input type="checkbox" id="sucess_byhand" value="'+data[i]['hostid']+'"/></td></tr>';
+	    hostinfo.append(option);
+	    }
+	}
+	hostinfo.append('</tbody>')
+	eval('$("table#hostinfo").editableTableWidget()')
+    }, error: function( xhr, status, errorThrown ) {
+        alert( "Sorry, there was a problem!" );
+        console.log( "Error: " + errorThrown );
+        console.log( "Status: " + status );
+        console.dir( xhr );
+    },
+       
+    })
+    });  
+
+    $('body').on('click', '#check_all', function (event) {
+        if (this.checked){
+		    $("input[type=checkbox]").each( function() {
+		         $(this).prop("checked", true);
+		    });
+		} else {
+		    $("input[type=checkbox]").each( function() {
+		         $(this).prop("checked", false); 
+		    });			
+		}
+	});
+	
+	
+	$('body').on('click', '#deploybutton', function (e) {
+	    //var button = $(e.relatedTarget)
+	    e.preventDefault();
+		var $btn = $(this);
+		$btn.addClass('disabled'); 
+	    dataarray = new Array();
+	    rows=$("tr");
+        var middleware_v = $('select#middleware').val();
+	    for(var i=1; i<rows.length; i++)
+	    { 
+	      var row_t = rows[i].childNodes;
+	      var json_t = {'host_id':row_t[0].innerHTML,'host_name':row_t[1].innerHTML,'area':row_t[2].innerHTML,'ip':row_t[3].innerHTML,'instance':row_t[4].innerHTML,'username':row_t[5].innerHTML,'console_port':row_t[6].innerHTML};
+		  dataarray.push(json_t);
+	    }
+	    
+	    if (dataarray){
+		$.ajax({
+	    url: "/application/deploy_middleware_deploy/", 
+	    data: { 
+	       datas : dataarray,
+	       middleware : middleware_v
+	    }, 
+	    type: "POST",
+	    cache : false,
+	    //beforeSend : $(this).button('disabled'),
+	    
+	    success: function(respose) {
+	     alert(respose);
+	     $btn.removeClass('disabled'); 
+	    },error: function( xhr, status, errorThrown ) {
+	    alert( "Sorry, there was a problem!" );
+	    console.log( "Error: " + errorThrown );
+	    console.log( "Status: " + status );
+	    console.dir( xhr );
+	    },
+	    });
+	    }    
+	});
+	
+	$('body').on('click','#deployreset',function(e){
+	    e.preventDefault();
+	    //$(this).button('disabled') // button text will be "disabled"
+	    dataarray = new Array();
+	    rows=$("tr");
+        var middleware_v = $('select#middleware').val();
+	    for(var i=1; i<rows.length; i++)
+	    { 
+	      var row_t = rows[i].childNodes;
+	      var json_t = {'host_id':row_t[0].innerHTML,'host_name':row_t[1].innerHTML,'area':row_t[2].innerHTML,'ip':row_t[3].innerHTML,'instance':row_t[4].innerHTML,'username':row_t[5].innerHTML,'console_port':row_t[6].innerHTML};
+		  dataarray.push(json_t);
+	    }
+	    
+	    if (dataarray){
+		$.ajax({
+	    url: "/application/deploy_middleware_deploy_reset/", 
+	    data: { 
+	       datas : dataarray,
+	       middleware : middleware_v
+	    }, 
+	    type: "POST",
+	    cache : false,
+	   //beforeSend : function(){$(this).button('disabled')},
+	    
+	    success: function(respose) {
+	     alert(respose);
+	    },error: function( xhr, status, errorThrown ) {
+	    alert( "Sorry, there was a problem!" );
+	    console.log( "Error: " + errorThrown );
+	    console.log( "Status: " + status );
+	    console.dir( xhr );
+	    },	    
+	    });
+	    }
+	
+	//end
+	})
+</script> 
+        </div>
+        <!-- /#page-wrapper -->
+
+{% endblock %}

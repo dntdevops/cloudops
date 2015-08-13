@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %} 中间件部署 {% endblock %}
+
+{% block linkscript %}
+{% load staticfiles %}
+<link href="{% static 'css/fileinput.min.css' %}" rel="stylesheet" type="text/css">
+<script type="text/javascript" src="{% static 'js/fileinput.min.js' %} "> </script>
+{% endblock %}
+
+{% block content %}
+
+<div class="container" style="background-color:#fff">
+    <div class="row">
+        <div class="col-lg-12">
+            <h1 class="page-header">上传部署包</h1>
+        </div>
+    </div>
+    <div class="row">
+   </div>
+    <div class="row col-lg-12">
+        
+		<form class="form-horizontal" method="post" enctype="multipart/form-data"  role="form">
+            <div class="form-group">
+                <label for="order_no" class="control-label col-lg-1">申请单</label>
+                <div class="col-lg-3">
+				    <select id='order_no' class="form-control">
+				    <option value =""></option>
+				      {% for item in order_no %}
+					      <option value ="{{item.order_no}}">{{item.order_name}}</option>
+					  {% endfor %}
+				    </select> 
+			    </div>
+			    
+			    <label for="deploy_host" class="control-label col-lg-1">部署主机</label>
+                <div class="col-lg-2">
+				    <select id='deploy_host' class="form-control">
+				    <option value =""></option>
+				      {% for item in deploy_host %}
+					      <option value ="{{item.host_id}}">{{item.vhost_name}}</option>
+					  {% endfor %}
+				  </select>
+				</div> 
+				
+				<label for="deploy_user" class="control-label col-lg-1">部署用户</label>
+                <div class="col-lg-2">
+				    <select id='deploy_user' class="form-control">
+				    <option value ="">-------</option>
+				      {% for item in deploy_user %}
+					      <option value ="{{item}}">{{item}}</option>
+					  {% endfor %}
+				  </select>
+				</div> 
+				
+			</div>
+				  
+			<div class="form-group col-lg-12">
+			   <label class="col-lg-1" sr></label>
+		       <input id ="uploadfile" name="uploadfile" type="file" class="file form-control" data-show-preview="false" placeholder="{{package}}" />
+		    </div>
+
+		</form>
+
+    </div>
+<script>
+	$("select#order_no").on("change",function(){
+    var order_no_v = $('select#order_no').val();
+    var deploy_host = $('select#deploy_host');
+    var deploy_user = $('select#deploy_user');    
+    
+    $.ajax({
+    url: "/application/upload_package_select/", 
+    data: {
+        order_no : order_no_v
+    }, 
+    type: "GET",
+    dataType : "json", 
+    
+    success: function(data) {
+    deploy_host_data = data.deploy_host;
+    deploy_user_data = data.deploy_user;
+    
+    if (deploy_host_data != ""){ 
+	deploy_host.empty(); 
+	deploy_host.append('<option selected="selected" value=""></option>'); 
+	for(i=0; i<deploy_host_data.length; i++){ 
+		option = '<option value="' + deploy_host_data[i]['host_id'] + '">' + deploy_host_data[i]['vhost_name'] + '</option>'; 
+		deploy_host.append(option); 
+	}
+	}
+	
+	if (deploy_user_data != ""){ 
+	deploy_user.empty(); 
+	deploy_user.append('<option selected="selected" value=""></option>'); 
+	for(i=0; i<deploy_user_data.length; i++){ 
+		option = '<option value="' + deploy_user_data[i] + '">' + deploy_user_data[i] + '</option>'; 
+		deploy_user.append(option); 
+	}
+	}
+    
+    }, error: function( xhr, status, errorThrown ) {
+        alert( "Sorry, there was a problem!" );
+        console.log( "Error: " + errorThrown );
+        console.log( "Status: " + status );
+        console.dir( xhr );
+    },
+       
+    })
+    });  
+
+    $('#uploadfile').fileinput({
+    
+    uploadUrl : "/application/handle_uploaded_file/",
+    uploadExtraData : function() {
+	    var obj = {};
+	    $('select').each(function() {
+	        var id = $(this).attr('id'), val = $(this).val();
+	        obj[id] = val;
+	    });
+	    return obj;
+	}
+    
+    //endfileinput
+    });
+    
+    $('#uploadfile').on('filebatchuploadcomplete', function(event, files, extra) {
+      var order_no_v = $('select#order_no').val();
+      window.location.href = "/application/project_user_instance/?order_no="+order_no_v;
+    });
+
+</script>            
+             
+       </div>
+        <!-- /#page-wrapper -->
+{% endblock %}

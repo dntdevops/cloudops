@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}用户管理 {% endblock %}
+
+{% block content %}
+<div class="container" style="backgroud-color:#fff">
+  <div class="row col-lg-12" >  
+  	<h1 class="page-header">用户管理</h1>
+  </div>
+  
+  <div role="tabpanel">
+	  <!-- Nav tabs -->
+	  <ul id="userTab" class="nav nav-tabs" role="tablist">
+	    <li role="presentation" class="active"><a href="#createuser" aria-controls="createuser" role="tab" data-toggle="tab">创建用户</a></li>
+	    <li role="presentation"><a href="#modifyuser" aria-controls="modifyuser" role="tab" data-toggle="tab">修改用户关联信息</a></li>
+	  </ul>
+
+	  <!-- Tab panes -->
+	  <div class="tab-content">
+	    <div role="tabpanel" class="tab-pane active" id="createuser">			    
+		  <div class="row col-lg-12">
+		  	<form id="createuserform" class="form-horizontal" role="form">
+		  	  <div class="form-group">
+		  	  	<label for="username" class="control-label col-lg-1">用户名：</label>
+		  	  	<input type="text" id="username" class="form-control col-lg-4" value=""/>
+		  	  </div>
+		  	  <div class="form-group">
+		  	  	<label for="password" class="control-label col-lg-1">密码：</label>
+		  	  	<input type="password" id="password" class="form-control col-lg-4" value=""/>  	  
+		  	  </div>
+		  	  <div class="form-group">
+		  	  	<label for="userproject" class="control-label col-lg-1">关联项目：</label>
+		  	  	<select id="userproject" multiple class="form-control" >
+		  	  	    {% for project in projects %}
+		  	  		<option value="{{project.order_no}}">{{project.order_name}}</option>
+		  	  	    {% endfor %}
+		  	  	</select>  	  
+		  	  </div>  	
+		  	  <div class="form-group">
+		  	  	<label for="oldpassword" class="control-label sr"></label>
+		  	  	<input type="button" id="userrefproject" class="btn btn-primary col-lg-2" value="提交"/>  	  
+		  	  </div>
+		  	</form>
+		  <!--  end row -->
+		  </div>
+		  <!--  end tabpanel -->
+		  </div>
+		  
+		  <div role="tabpanel" class="tab-pane" id="modifyuser">
+		  	<div class="row col-lg-12">  
+		  	  <form role="form" class="form-horizontal" id="modifyuserform">
+		  	  <div class="form-group">
+		  	  	<label for="username" class="control-label col-lg-1 ">用户名：</label>
+		  	  	<input id="username" type="text" class="form-control col-lg-4"/>
+		  	  </div>
+  		  	  <div class="form-group">
+		  	  	<label for="userproject" class="control-label col-lg-1">关联项目：</label>
+		  	  	<select id="userproject" multiple class="form-control" >
+		  	  	    {% for project in projects %}
+		  	  		<option value="{{project.no}}">{{project.order_name}}</option>
+		  	  	    {% endfor %}
+		  	  	</select>  	  
+		  	  </div>  	
+		  	  <div class="form-group">
+		  	  	<label for="oldpassword" class="col-lg-1 control-label sr"></label>
+		  	  	<input type="button" id="modifyuserrefproject" class="btn btn-primary col-lg-2" value="提交"/>  	  
+		  	  </div>		  	  
+		  	  </form>
+		  	
+		  	<!--  -->
+		  	</div>
+		  
+		  <!-- end tabpanel modifyuser-->
+		  </div>
+		  
+		  
+		  <!-- tab-content -->
+		  </div>
+		  
+		<!-- end container -->
+<script>
+$("input#userrefproject").on('click',function(){
+  var username_v = $("input#username").val();
+  var password_v = $("input#password").val();
+  var project_v = $("select#userproject").val();
+  var showmessage_v = $("form#createuserform");
+  $.ajax({
+  	url : "/application/createuser/",
+  	data : {
+  		username : username_v,
+  		password : password_v,
+  		projects : project_v  			
+  	},
+  	method : 'POST',
+  	cache : false,
+  	
+  	success: function(message){
+  		alert(message); 
+  		username_v.val('');
+  		password_v.val('');	
+  	},error : function(message){
+  		showmessage_v.html(message);
+  	}
+  });
+
+});
+
+$("input#modifyuserrefproject").on('click',function(){
+  var username_v = $("input#username").val();
+  var project_v = $("select#userproject").val();
+  $.ajax({
+  	url : "/application/modifyuser/",
+  	data : {
+  		username : username_v,
+  		projects : project_v  			
+  	},
+  	method : 'POST',
+  	cache : false,
+  	
+  	success: function(message){
+  		alert(message);  	
+  	},error : function(message){
+  		alert(message);
+  	}
+  });
+
+});
+</script>
+</div>
+{% endblock %}
