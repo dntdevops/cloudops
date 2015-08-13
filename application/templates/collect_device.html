@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %} DevOps运维平台 {% endblock %}
+
+{% block content %}
+<div class="container" style="background-color:#fff">
+
+    <div class="row">
+        <div class="col-lg-12">
+            <h1 class="page-header">新增项目</h1>
+        </div>
+    </div>
+    <div class="row">
+      <div class="col-lg-12" style="padding-bottom:9px;padding-left:">  
+          <button id="autogetprojectinfo" type="button" class="btn btn-default"> 云平台获取数据</button>
+      </div>
+    </div>
+    <div class="row">  
+    <!-- /.col-lg-12 -->
+        <div class="col-lg-12">
+            <div style="padding-bottom:9px">
+                <form class="form-inline" role="form" action="/daily/nbu_daily/" method="post">
+                <div class="form-group">
+                    <label for="projectname">项目名：</label>
+				    <input id="projectname" type="text" class="form-control" placeholder="项目名称" />                   
+                </div>
+                <div class="form-group">
+                    <label for="middleware">中间件：</label>
+				    <select id='middleware' class="form-control">
+				      <option value =""></option>
+				      {% for item in middleware %}
+				      <option value ="{{item.name}}">{{item.name}}</option>
+					  {% endfor %}
+				  </select> 
+                </div>
+                <div class="form-group">
+                    <label for="deploypackage">部署包：</label>
+                    <input id="deploypackage" type="text" class="form-control" placeholder="部署包[.war|.ear]" />
+                </div>
+                <button id="addproject" type="button" class="btn btn-default" >新增项目</button>
+               </form>
+            </div>
+        </div>
+     </div>
+
+    <div class="row">
+	  <div id="table_data" class="col-lg-12">
+	      <table id="project_table" class="table table-bordered table-striped table-hover" >
+	      <tr><th class="col-lg-8">主机信息</th><th class="col-lg-2"><button type="button" id="addnew" class="btn btn-default">增加</button><button type="button" id="delnew" class="btn btn-default"> 删除</button></th></tr>
+	      </table>
+	  </div> 
+	<div>	  
+  
+	<script> 
+	
+    $('body').on('click', '#addnew', function (event) {
+	var table1 = $('#project_table'); 
+	var firstTr = table1.find('tr:last'); 
+	var row = $('<tr><td><input type="text" id="hostname"  class="form-control" placeholder="格式：IP_操作系统_主机名_运用类型_实例数"></td><td><input type="checkbox" id="count"></td></tr>'); 
+	table1.append(row);
+	});
+	
+	$('body').on('click', '#delnew', function (event) {
+    
+    var checkbox = $("input[type=checkbox]#count");
+    checkbox.each( function() {
+    if (this.checked) { $(this).parent().parent().remove(); }
+	});
+
+	});
+	
+	$('body').on('click', '#addproject', function (event) {
+	var order_name = $('input#projectname').val();
+	var deploy_package = $('input#deploypackage').val();
+	var hostnames = $('input#hostname');
+	var middleware = $('select#middleware').val();
+	
+	if(hostnames.length==0){
+	   alert('请添加主机！');
+	   return false;	
+	}
+	if(!order_name||!deploy_package||!middleware){
+	   alert('请填写完整信息！')
+	   return false;	
+	}
+	
+	var host = '';
+	for(var i=0; i < hostnames.length; i++){
+	  var host_tmp = hostnames[i].value;
+	  if(!host_tmp){
+	    alert('请去掉空白的项！');
+	  }
+	  host =  host + host_tmp + ',';
+	}
+	
+    $.ajax({
+    url : '/application/addproject/' ,
+    data : {
+        project_name : order_name,
+        middleware : middleware,
+        deploy_package : deploy_package,
+        hostname : host    
+    },
+    type : 'POST',
+    cache : false,
+    
+    success:function(respose){
+      alert(respose);
+    },error:function(msg){
+  	  alert(msg);
+	  console.log( "Error: " + errorThrown );
+	  console.log('status:' + status);
+	  console.dir( xhr );
+    },
+    //ajax
+    });
+	//addproject
+	});
+	
+	$("button#autogetprojectinfo").on("click",function(){
+	var $btn = $(this);
+	$btn.addClass('disabled'); 
+	 
+	$.ajax({
+      url : '/application/addprojectauto/',
+	  type : 'GET',
+	  cache : false,
+	  
+	  success:function(response){alert(response);$btn.removeClass('disabled'); },error:function(response){alert(response);}
+	//end ajax
+	})
+	//end autogetprojectinfo
+	});
+	</script>
+
+</div>
+{% endblock %}
